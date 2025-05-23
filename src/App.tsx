@@ -1,13 +1,12 @@
 import { Provider } from "react-redux";
-import store from "./redux/store";
-import Router from "./routes/Router";
-import InitializedAuth from "./auth/InitializedAuth";
+import AppRouter from "./routers/AppRouter";
+import { store } from "./redux/store";
+import './index.css';
 
 function App() {
   return (
     <Provider store={store}>
-      <InitializedAuth />
-      <Router />
+      <AppRouter/>
     </Provider>
   );
 }
