@@ -6,65 +6,90 @@ import { Container, TextField, Button, Typography, Box, Tabs, Tab } from '@mui/m
 
 const LoginRegisterPage = () => {
   const [login, setLogin] = useState(0); // 0=login, 1=register
-  const [form, setForm] = useState({
+  const [formRegister, setFormRegister] = useState({
     id:'',
     name: '',
     email: '',
     password: '',
     profileImage: '',
   });
+  const [formLogin, setFormLogin] = useState({
+    name: '',
+    password: '',
+  });
 
   const handleChangeTab = (_event: any, newValue: number) => {
     setLogin(newValue);
-    setForm({ name: '', email: '', password: '', profileImage: '' ,id:''}); // reset form
+    if(newValue === 1)
+      setFormRegister({ name: '', email: '', password: '', profileImage: '' ,id:''}); // reset form
+    else
+      setFormLogin({name: '', password: ''});
+
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setFormRegister((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (login === 1) {
       // Register
-      if (!form.email || !form.password || !form.name) {
+      if (!formRegister.email || !formRegister.password || !formRegister.name) {
         alert('Please fill all required fields');
         return;
       }
 
       const user = {
-        id:form.id,
-        name: form.name,
-        email: form.email,
-        password: form.password,
-        profileImage: form.profileImage,
+        id:formRegister.id,
+        name: formRegister.name,
+        email: formRegister.email,
+        password: formRegister.password,
+        profileImage: formRegister.profileImage,
       };
+      console.log(sessionStorage.getItem.toString());
 
-      localStorage.setItem(`user_${form.email}`, JSON.stringify(user));
+      console.log("reg : "+ formRegister.name);
+      console.log("login : "+ formLogin.name);
+
+      // sessionStorage.setItem(`user_${formRegister.email}`, JSON.stringify(user));
       alert('Registration successful. You can now log in.');
       setLogin(0); // Switch to login tab
     } else {
       // Login
-      const stored_pass = localStorage.getItem(`user_${form.password}`);
-      const stored_name = localStorage.getItem(`user_${form.name}`);
-      console.log(stored_pass);
-      console.log(stored_name);
+      console.log("lll: "+sessionStorage.getItem.toString());
+      
+      const stored_pass_reg = sessionStorage.getItem(`user_${formRegister.password}`);
+      const stored_name_reg = sessionStorage.getItem(`user_${formRegister.name}`);
       
 
-      if (!stored_pass && !stored_name) {
+      // const stored_email = sessionStorage.getItem(`user_${form.email}`);
+      console.log(stored_pass_reg);
+      console.log(stored_name_reg);
+      // console.log(stored_email);
+      //
+      console.log(formLogin.password);
+      console.log(formLogin);
+      const stored_pass_log = sessionStorage.getItem(`user_${formLogin.password}`);
+      const stored_name_log = sessionStorage.getItem(`user_${formLogin.name}`);
+
+      if (stored_name_reg !== stored_name_log && stored_pass_reg !==  stored_pass_log) {
         alert('User not found.');
         return;
       }
-
-      const storedUser = JSON.parse(stored_pass?.toString());
-      if (storedUser.password !== form.password) {
-        alert('Incorrect password.');
-        return;
+      else{
+        alert('connected!!');
       }
 
-      localStorage.setItem('loggedUser', JSON.stringify(storedUser));
-      alert(`Welcome, ${storedUser.name}!`);
+      // const storedUser = JSON.parse(stored_pass?.toString());
+      // if (storedUser.password !== form.password) {
+      //   alert('Incorrect password.');
+      //   return;
+      // }
+
+      // localStorage.setItem('loggedUser', JSON.stringify(storedUser));
+      // alert(`Welcome, ${storedUser.name}!`);
     }
   };
 
@@ -89,7 +114,7 @@ const LoginRegisterPage = () => {
               variant="outlined"
               name="email"
               type="email"
-              value={form.email}
+              value={formRegister.email}
               onChange={handleInputChange}
             />
           )}
@@ -99,7 +124,7 @@ const LoginRegisterPage = () => {
             margin="normal"
             variant="outlined"
             name="name"
-            value={form.name}
+            value={formRegister.name}
             onChange={handleInputChange}
           />
           <TextField
@@ -109,18 +134,19 @@ const LoginRegisterPage = () => {
             variant="outlined"
             name="password"
             type="password"
-            value={form.password}
+            value={formRegister.password}
             onChange={handleInputChange}
           />
+          {login === 1 &&(
           <TextField
             fullWidth
             label="Profile Image"
             margin="normal"
             variant="outlined"
             name="profileImage"
-            value={form.profileImage}
+            value={formRegister.profileImage}
             onChange={handleInputChange}
-          />
+          />)}
 
           <Button
             type="submit"
