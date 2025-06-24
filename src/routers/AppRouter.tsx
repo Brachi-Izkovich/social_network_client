@@ -5,6 +5,7 @@ import NewPostPage from "../pages/NewPostPage";
 import ProfilePage from "../pages/ProfilePage";
 import TopicPage from "../pages/TopicPage";
 import ForumPage from "../pages/ForumPage";
+import CategoryPage from '../pages/CategoryPage';
 
 
 
@@ -15,10 +16,10 @@ export default function AppRouter() {
             <Route path="/" element={<HomePage />}/>
             <Route path="/Login" element={<LoginRegisterPage/>}/>
             <Route path="/NewPost" element={<NewPostPage/>}/>
-            <Route path="/Profile" element={<ProfilePage/>}/>
+            {/* <Route path="/Profile" element={<ProfilePage/>}/> */}
             <Route path="/Topic" element={<TopicPage/>}/>
             <Route path="/Forum" element={<ForumPage/>}/>
-
+            <Route path="/Categories" element={<CategoryPage />} />
        </Routes>
      </Router>
    );
