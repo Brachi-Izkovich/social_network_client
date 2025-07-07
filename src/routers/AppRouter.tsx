@@ -13,13 +13,14 @@ export default function AppRouter() {
    return (
      <Router>
        <Routes>
-            <Route path="/" element={<HomePage />}/>
+            <Route path="/Home" element={<HomePage />}/>
             <Route path="/Login" element={<LoginRegisterPage/>}/>
             <Route path="/NewPost" element={<NewPostPage/>}/>
             {/* <Route path="/Profile" element={<ProfilePage/>}/> */}
             <Route path="/Topic" element={<TopicPage/>}/>
             <Route path="/Forum" element={<ForumPage/>}/>
             <Route path="/Categories" element={<CategoryPage />} />
+            
        </Routes>
      </Router>
    );

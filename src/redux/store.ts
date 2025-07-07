@@ -2,9 +2,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 
 export const store = configureStore({
-  reducer: {
-    // reducers ייכנסו פה
-  },
+  reducer: (state = {}) => state, // רידוסר דמה שלא עושה כלום
 });
 
 export type RootState = ReturnType<typeof store.getState>;
