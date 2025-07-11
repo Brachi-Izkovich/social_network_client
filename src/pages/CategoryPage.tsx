@@ -1,13 +1,16 @@
 import React from 'react';
-import CategorySection from '../sections/CategorySection';
+import { useParams } from 'react-router-dom';
+import CategoryList from '../components/CategoryList';
+import CategoryTopicsList from '../components/CategoryTopicsList';
 
 const CategoryPage: React.FC = () => {
-  return (
-    <div>
-      <h1>דף קטגוריות</h1>
-      <CategorySection />
-    </div>
-  );
+  const { id } = useParams();
+  // אם יש id בנתיב, מציגים רק את הנושאים של אותה קטגוריה
+  if (id) {
+    return <CategoryTopicsList />;
+  }
+  // אחרת מציגים את כל הקטגוריות
+  return <CategoryList />;
 };
 
 export default CategoryPage;

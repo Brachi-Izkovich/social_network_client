@@ -1,6 +1,6 @@
 // דף עם הודעות בתוך נושא 
-export default function TopicPage(){
-    return(
-        <div>Topic page</div>
-    )
+import TopicMessagesList from '../components/TopicMessagesList';
+
+export default function TopicPage() {
+    return <TopicMessagesList />;
 }

@@ -1,139 +1,109 @@
-// // דף פרופיל
-// // src/pages/ProfilePage.tsx
-// import React from 'react';
-// import Header from '../components/Header';
-// import ProfileMenu from '../components/ProfileMenu';
-// import { UserType } from '../types/user.types';
-// import { RoleUserType } from '../types/enums/roleUserEnum.types';
 
-// const mockUser: UserType = {
-//     name: 'Brachi45',
-//     email: 'b@gmail.com',
-//     role: RoleUserType.Admin, 
-//     countMessages: 2300,
-//     imageProfileUrl: '../../public/logo192',
-//     password: '1234',
-//     id: 1
-// };
-
-// const ProfilePage: React.FC = () => {
-//   return (
-//     <div dir="rtl" style={{ fontFamily: 'sans-serif' }}>
-//       <Header />
-
-//       <div style={{ display: 'flex', marginTop: '20px' }}>
-//         {/* תפריט צד שמאלי */}
-//         <div style={{ width: '100px', padding: '20px' }}>
-//           <ProfileMenu user={mockUser} />
-//           <div style={{ marginTop: '20px' }}>
-//             <button style={buttonStyle}>פרופיל</button>
-//             <button style={buttonStyle}>הודעות שלי</button>
-//             <button style={buttonStyle}>התראות</button>
-//           </div>
-//         </div>
-
-//         {/* גוף הדף */}
-//         <div style={{ flexGrow: 1, textAlign: 'center', padding: '20px' }}>
-//           <h2 style={{ fontSize: '28px', marginBottom: '20px' }}>פרופיל</h2>
-
-//           <div style={{ fontSize: '18px', lineHeight: '2' }}>
-//             <div>שם משתמש: {mockUser.name}</div>
-//             <div>מייל: {mockUser.email}</div>
-//             <div>רמת משתמש: {mockUser.role}</div>
-//             <div>מספר ההודעות שכתבתי: {mockUser.countMessages}</div>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// const buttonStyle: React.CSSProperties = {
-//   display: 'block',
-//   width: '100%',
-//   marginBottom: '10px',
-//   padding: '10px',
-//   backgroundColor: 'white',
-//   border: '1px solid gray',
-//   borderRadius: '4px',
-//   cursor: 'pointer'
-// };
-
-// export default ProfilePage;
-
-
-
-//2
-// src/components/ProfileMenu.tsx
-import React, { useState } from 'react';
-import {
-  Avatar,
-  List,
-  ListItem,
-  ListItemText,
-  Tooltip,
-  ClickAwayListener,
-  Box
-} from '@mui/material';
-import { styled } from '@mui/system';
+import React, { useEffect, useState } from 'react';
+import { Box, Typography, Avatar, IconButton, Tooltip, TextField, Button, CircularProgress } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import { getPrivateUser, updateUser } from '../services/userService';
+import { parseJwt } from '../services/jwtService';
 import { UserType } from '../types/user.types';
 
-const HoverBox = styled(Box)(({ theme }) => ({
-  position: 'absolute',
-  top: 70,
-  left: 20,
-  backgroundColor: '#fff',
-  boxShadow: theme?.shadows?.[3] ?? '0px 3px 6px rgba(0,0,0,0.1)',
-  borderRadius: theme.shape.borderRadius,
-  padding: theme.spacing(1),
-  zIndex: 10,
-}));
+const ProfilePage: React.FC = () => {
+  const [user, setUser] = useState<UserType | null>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [form, setForm] = useState<Partial<UserType>>({});
+  const [loading, setLoading] = useState(true);
 
-const ProfileWrapper = styled(Box)(({ theme }) => ({
-  position: 'relative',
-  display: 'inline-block'
-}));
+  useEffect(() => { 
+    const token = sessionStorage.getItem('token');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    getPrivateUser()
+      .then((u) => {
+        setUser(u);
+        setForm(u);
+      })
+      .catch((err) => {
+        console.error('getPrivateUser error:', err);
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
-interface ProfileMenuProps {
-  user: UserType;
-}
-
-const ProfileMenu: React.FC<ProfileMenuProps> = ({ user }) => {
-  const [openMenu, setOpenMenu] = useState(false);
-
-  const handleToggleMenu = () => {
-    setOpenMenu(prev => !prev);
+  const handleEdit = () => setEditMode(true);
+  const handleCancel = () => {
+    setEditMode(false);
+    if (user) setForm(user);
+  };
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+  const handleSave = async () => {
+    if (!user) return;
+    try {
+      // קריאה ל-API לעדכון משתמש
+      // שמות שדות ב-PascalCase
+      const updated = await updateUser(user.id, form);
+      setUser(updated);
+      setEditMode(false);
+    } catch (err) {
+      // אפשר להציג הודעת שגיאה למשתמש
+      console.error('עדכון משתמש נכשל:', err);
+    }
   };
 
-  const handleCloseMenu = () => {
-    setOpenMenu(false);
-  };
+  if (loading) return <Box textAlign="center" mt={6}><CircularProgress /></Box>;
+
+  // טיפול במקרה שהשדות לא קיימים (תמיכה גם באותיות גדולות וגם קטנות)
+  // תמיכה גם באותיות גדולות וגם קטנות (למקרה שהשרת מחזיר אות גדולה)
+  // תמיכה בשדות מהשרת (PascalCase) בלבד, לפי ה-entity
+  const email = user?.email || '';
+  const countMessages = user?.countMessages ?? '';
+  const role = user?.role || '';
+  const registrationDate = user?.registrationDate
+    ? new Date(user.registrationDate).toLocaleDateString()
+    : '';
+
+
+  // Debug: הדפסת user ל-console
+  console.log('user:', user);
+  if (!user) return <Box textAlign="center" mt={6}>לא נמצא משתמש</Box>;
 
   return (
-    <ClickAwayListener onClickAway={handleCloseMenu}>
-      <ProfileWrapper>
-        <Tooltip title="Open profile" arrow placement="right">
-          <Avatar
-            onClick={handleToggleMenu}
-            src={user.imageProfileUrl}
-            sx={{ width: 56, height: 56, cursor: 'pointer' }}
-          >
-            {!user.imageProfileUrl && user.name.charAt(0)}
-          </Avatar>
-        </Tooltip>
-        {openMenu && (
-          <HoverBox>
-            <List>
-              <ListItem button><ListItemText primary="פרופיל" /></ListItem>
-              <ListItem button><ListItemText primary="הודעות שלי" /></ListItem>
-              <ListItem button><ListItemText primary="הגדרות" /></ListItem>
-              <ListItem button><ListItemText primary="התנתקות" /></ListItem>
-            </List>
-          </HoverBox>
-        )}
-      </ProfileWrapper>
-    </ClickAwayListener>
+    <Box maxWidth={420} mx="auto" mt={6} p={3} borderRadius={4} boxShadow={3} bgcolor="#fff" textAlign="center">
+      <Box display="flex" flexDirection="column" alignItems="center" mb={2}>
+        <Avatar src={user.imageProfileUrl} sx={{ width: 80, height: 80, mb: 1 }} />
+        <Box display="flex" alignItems="center" gap={1}>
+          <Typography variant="h5" fontWeight={700}>{user.name}</Typography>
+          <Tooltip title="עדכן" arrow>
+            <IconButton onClick={handleEdit} size="small" color="primary">
+              <EditIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </Box>
+      {editMode ? (
+        <Box component="form" display="flex" flexDirection="column" gap={2}>
+          <TextField label="שם משתמש" name="name" value={form.name || ''} onChange={handleChange} fullWidth />
+          <TextField label="אימייל" name="email" value={form.email || ''} onChange={handleChange} fullWidth />
+          <TextField label="סיסמה" name="password" value={form.password || ''} onChange={handleChange} fullWidth type="password" />
+          <Box display="flex" gap={2} justifyContent="center">
+            <Button variant="contained" color="primary" onClick={handleSave}>שמור</Button>
+            <Button variant="outlined" onClick={handleCancel}>ביטול</Button>
+          </Box>
+        </Box>
+      ) : (
+        <>
+          <Typography variant="body1" mt={1}>אימייל: {email}</Typography>
+          <Typography variant="body1">רמת משתמש: {role}</Typography>
+          <Typography variant="body1">מספר הודעות: {countMessages}</Typography>
+          <Typography variant="body1">נרשם בתאריך: {registrationDate}</Typography>
+        </>
+      )}
+    </Box>
   );
 };
 
-export default ProfileMenu;
+export default ProfilePage;
+
+
+

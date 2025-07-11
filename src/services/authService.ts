@@ -15,7 +15,7 @@ export const register = (userData: {
     formData.append('fileImageProfile', userData.fileImageProfile);
   }
 
-  return api.post('/auth/register', formData, {
+  return api.post('https://localhost:7147/api/User/Register', formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     }
@@ -23,25 +23,22 @@ export const register = (userData: {
 };
 
 
-// export interface UserRegisterDto {
-//   name: string;
-//   password:string;
-//   email: string;
-//   profileImage: string;
-// }
 
 export interface UserLoginDto {
-  name: string;
-  password: string;
-  email: string;
+  UserName: string;
+  Password: string;
+  Email: string;
 }
 
-// export const register = async (userData:UserRegisterDto) => {
-//   const response = await api.post('/User/register', userData);
-//   return response.data;
-// };
-
-export const login = async (credentials:UserLoginDto) => {
-  const response = await api.post('/User/login', credentials);
-  return response.data as {token:string}; // כאן נניח שתקבלי את ה־JWT
+export const login = async (credentials: UserLoginDto) => {
+  const formData = new FormData();
+  formData.append('UserName', credentials.UserName);
+  formData.append('Password', credentials.Password);
+  formData.append('Email', credentials.Email);
+  const response = await api.post('https://localhost:7147/api/User/login', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+  return response.data as { token: string };
 };
