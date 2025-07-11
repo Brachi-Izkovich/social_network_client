@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import jwt_decode from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 import { Box, Typography, Card, CardContent, List, ListItem, ListItemText, CircularProgress, IconButton, Tooltip, Menu, MenuItem, TextField, Button } from '@mui/material';
 import AddReactionIcon from '@mui/icons-material/AddReaction';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
@@ -32,8 +32,7 @@ const TopicMessagesList: React.FC = () => {
     try {
       const token = sessionStorage.getItem('token');
       if (token) {
-        const decode: any = typeof jwt_decode === 'function' ? jwt_decode : (jwt_decode as any).default;
-        const decoded: any = decode(token);
+      const decoded: any = jwtDecode(token);
         // שם המשתמש מה-token (בהנחה שיש claim כזה)
         const name = decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"] || decoded.name || '';
         const idValue = decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] ?? decoded.id;
@@ -167,90 +166,97 @@ const TopicMessagesList: React.FC = () => {
               <ListItemText primary="אין הודעות בנושא זה" sx={{ color: '#888' }} />
             </ListItem>
           )}
-          {messages.map((msg, idx) => {
-            // לוג הודעה ופידבקים
-            console.log(`[TopicMessagesList] הודעה ${msg.id}:`, msg);
-            const msgFeedbacks = allFeedbacks
-              .filter(fb => fb.messageId === msg.id)
-              .map(fb => ({ ...fb, type: mapServerEnum(fb.type as unknown as number) }));
-            console.log(`[TopicMessagesList] פידבקים להודעה ${msg.id}:`, msgFeedbacks);
-            const grouped = groupFeedbacks(msgFeedbacks);
-            const userId = user?.id ?? -1;
-            const usedTypes = Object.keys(grouped).filter(type => grouped[type].userIds.includes(userId));
-            const available = allEmojis.filter(e => !usedTypes.includes(e));
-            return (
-              <ListItem key={msg.id} sx={{ p: 0, mb: 2, alignItems: 'flex-start', bgcolor: 'transparent' }}>
-                <Card sx={{ width: '100%', bgcolor: 'rgba(255,255,255,0.97)', borderRadius: 3, boxShadow: 2, border: '1px solid #f44336', display: 'flex', flexDirection: 'row', p: 0 }}>
-                  {/* צד ימין: פרופיל */}
-                  <Box sx={{ width: 90, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', pt: 2, pr: 1 }}>
-                    <Box sx={{ width: 48, height: 48, borderRadius: '50%', bgcolor: getColorByChar(msg.user?.name), overflow: 'hidden', mb: 1, border: '2px solid #f44336', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#fff', fontWeight: 700 }}>
-                      {msg.user?.imageProfileUrl ? (
-                        <img src={msg.user.imageProfileUrl} alt={msg.user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <span>{msg.user?.name?.charAt(0) || '?'}</span>
-                      )}
+          {/* מיון הודעות – ישנה ביותר ראשונה */}
+          {[...messages]
+            .map(msg => ({
+              ...msg,
+              timeSend: msg.timeSend ? new Date(msg.timeSend) : new Date(Date.now() - Math.floor(Math.random() * 10 + 1) * 60000)
+            }))
+            .sort((a, b) => a.timeSend.getTime() - b.timeSend.getTime())
+            .map((msg, idx) => {
+              // לוג הודעה ופידבקים
+              console.log(`[TopicMessagesList] הודעה ${msg.id}:`, msg);
+              const msgFeedbacks = allFeedbacks
+                .filter(fb => fb.messageId === msg.id)
+                .map(fb => ({ ...fb, type: mapServerEnum(fb.type as unknown as number) }));
+              console.log(`[TopicMessagesList] פידבקים להודעה ${msg.id}:`, msgFeedbacks);
+              const grouped = groupFeedbacks(msgFeedbacks);
+              const userId = user?.id ?? -1;
+              const usedTypes = Object.keys(grouped).filter(type => grouped[type].userIds.includes(userId));
+              const available = allEmojis.filter(e => !usedTypes.includes(e));
+              return (
+                <ListItem key={msg.id} sx={{ p: 0, mb: 2, alignItems: 'flex-start', bgcolor: 'transparent' }}>
+                  <Card sx={{ width: '100%', bgcolor: 'rgba(255,255,255,0.97)', borderRadius: 3, boxShadow: 2, border: '1px solid #f44336', display: 'flex', flexDirection: 'row', p: 0 }}>
+                    {/* צד ימין: פרופיל */}
+                    <Box sx={{ width: 90, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', pt: 2, pr: 1 }}>
+                      <Box sx={{ width: 48, height: 48, borderRadius: '50%', bgcolor: getColorByChar(msg.user?.name), overflow: 'hidden', mb: 1, border: '2px solid #f44336', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#fff', fontWeight: 700 }}>
+                        {msg.user?.imageProfileUrl ? (
+                          <img src={msg.user.imageProfileUrl} alt={msg.user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <span>{msg.user?.name?.charAt(0) || '?'}</span>
+                        )}
+                      </Box>
+                      <Typography variant="body2" sx={{ color: '#222', fontWeight: 600, textAlign: 'center', wordBreak: 'break-word' }}>{msg.user?.name}</Typography>
                     </Box>
-                    <Typography variant="body2" sx={{ color: '#222', fontWeight: 600, textAlign: 'center', wordBreak: 'break-word' }}>{msg.user?.name}</Typography>
-                  </Box>
-                  {/* גוף ההודעה */}
-                  <Box sx={{ flex: 1, p: 2, pt: 1, position: 'relative', minHeight: 80 }}>
-                    {/* מספר סידורי */}
-                    <Typography variant="caption" sx={{ position: 'absolute', left: 0, top: 8, color: '#aaa', fontWeight: 700 }}>#{idx + 1}</Typography>
-                    {/* תאריך */}
-                    <Typography variant="caption" sx={{ position: 'absolute', right: 8, top: 8, color: '#888', fontSize: 13 }}>{msg.timeSend ? new Date(msg.timeSend).toLocaleDateString() : ''}</Typography>
-                    {/* תוכן */}
-                    <Typography variant="body1" fontWeight={600} color="#222" sx={{ mb: 1, whiteSpace: 'pre-line' }}>{msg.content}</Typography>
-                    {/* פידבקים להודעה */}
-                    <FeedbackList feedbacks={msgFeedbacks} onFeedbackClick={type => handleAddFeedback(msg.id, type)} />
-                    {/* קו אפור + פעולות */}
-                    <Box sx={{ borderTop: '1px solid #eee', mt: 2, pt: 1, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end' }}>
-                      {/* לייק */}
-                      <Tooltip title="אהבתי">
-                        <IconButton onClick={() => handleAddFeedback(msg.id, 'Like')}>
-                          <ThumbUpIcon />
-                        </IconButton>
-                      </Tooltip>
+                    {/* גוף ההודעה */}
+                    <Box sx={{ flex: 1, p: 2, pt: 1, position: 'relative', minHeight: 80 }}>
+                      {/* מספר סידורי */}
+                      <Typography variant="caption" sx={{ position: 'absolute', left: 0, top: 8, color: '#aaa', fontWeight: 700 }}>#{idx + 1}</Typography>
+                      {/* תאריך */}
+                      <Typography variant="caption" sx={{ position: 'absolute', right: 8, top: 8, color: '#888', fontSize: 13 }}>{msg.timeSend ? new Date(msg.timeSend).toLocaleDateString() : ''}</Typography>
+                      {/* תוכן */}
+                      <Typography variant="body1" fontWeight={600} color="#222" sx={{ mb: 1, whiteSpace: 'pre-line' }}>{msg.content}</Typography>
+                      {/* פידבקים להודעה */}
+                      <FeedbackList feedbacks={msgFeedbacks} onFeedbackClick={type => handleAddFeedback(msg.id, type)} />
+                      {/* קו אפור + פעולות */}
+                      <Box sx={{ borderTop: '1px solid #eee', mt: 2, pt: 1, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end' }}>
+                        {/* לייק */}
+                        <Tooltip title="אהבתי">
+                          <IconButton onClick={() => handleAddFeedback(msg.id, 'Like')}>
+                            <ThumbUpIcon />
+                          </IconButton>
+                        </Tooltip>
 
-                      {/* דיסלייק */}
-                      <Tooltip title="לא אהבתי">
-                        <IconButton onClick={() => handleAddFeedback(msg.id, 'Dislike')}>
-                          <ThumbDownIcon />
-                        </IconButton>
-                      </Tooltip>
+                        {/* דיסלייק */}
+                        <Tooltip title="לא אהבתי">
+                          <IconButton onClick={() => handleAddFeedback(msg.id, 'Dislike')}>
+                            <ThumbDownIcon />
+                          </IconButton>
+                        </Tooltip>
 
-                      {/* כפתור הוסף אימוג'י */}
-                      <Tooltip title="הוסף אימוג'י">
-                        <IconButton onClick={(e) => handleOpenMenu(e, msg.id)}>
-                          <AddReactionIcon />
-                        </IconButton>
-                      </Tooltip>
+                        {/* כפתור הוסף אימוג'י */}
+                        <Tooltip title="הוסף אימוג'י">
+                          <IconButton onClick={(e) => handleOpenMenu(e, msg.id)}>
+                            <AddReactionIcon />
+                          </IconButton>
+                        </Tooltip>
 
-                      {/* תפריט פופאפ לכל האימוג'ים */}
-                      <Menu
-                        anchorEl={anchorEl[msg.id]}
-                        open={Boolean(anchorEl[msg.id])}
-                        onClose={() => handleCloseMenu(msg.id)}
-                      >
-                        {Object.entries(FeedbackImougeType)
-                          .filter(([key]) => !['Like', 'Dislike'].includes(key))
-                          .map(([key, emoji]) => (
-                            <MenuItem key={key} onClick={() => {
-                              handleAddFeedback(msg.id, key);
-                              handleCloseMenu(msg.id);
-                            }}>
-                              <span style={{ fontSize: 22 }}>{emoji}</span>
-                              <Typography variant="body2" sx={{ ml: 1 }}>{key}</Typography>
-                            </MenuItem>
-                          ))}
-                      </Menu>
+                        {/* תפריט פופאפ לכל האימוג'ים */}
+                        <Menu
+                          anchorEl={anchorEl[msg.id]}
+                          open={Boolean(anchorEl[msg.id])}
+                          onClose={() => handleCloseMenu(msg.id)}
+                        >
+                          {Object.entries(FeedbackImougeType)
+                            .filter(([key]) => !['Like', 'Dislike'].includes(key))
+                            .map(([key, emoji]) => (
+                              <MenuItem key={key} onClick={() => {
+                                handleAddFeedback(msg.id, key);
+                                handleCloseMenu(msg.id);
+                              }}>
+                                <span style={{ fontSize: 22 }}>{emoji}</span>
+                                <Typography variant="body2" sx={{ ml: 1 }}>{key}</Typography>
+                              </MenuItem>
+                            ))}
+                        </Menu>
+                      </Box>
+
+
                     </Box>
-
-
-                  </Box>
-                </Card>
-              </ListItem>
-            );
-          })}
+                  </Card>
+                </ListItem>
+              );
+            })}
         </List>
         {/* טופס הוספת הודעה בתחתית */}
         <Box sx={{ mt: 2, width: '100%' }}>

@@ -64,12 +64,15 @@ const CategoryTopicsList: React.FC = () => {
                 return;
               }
               try {
-                const newTopic = await addTopic(Number(id), newTitle.trim());
-                setTopics(prev => [newTopic, ...prev]);
+                await addTopic(Number(id), newTitle.trim());
+                // רענון רשימת הנושאים מהשרת כדי להציג כותרת תקינה
+                const allTopics = await getTopics();
+                setTopics(allTopics.filter(t => String(t.categoryId) === id));
                 setNewTitle('');
                 setAdding(false);
-              } catch {
+              } catch (err) {
                 setAddError('שגיאה בהוספת נושא');
+                console.error('[CategoryTopicsList] שגיאה בהוספת נושא:', err);
               }
             }}>הוסף</Button>
             <Button variant="outlined" color="secondary" onClick={() => { setAdding(false); setNewTitle(''); setAddError(null); }}>ביטול</Button>

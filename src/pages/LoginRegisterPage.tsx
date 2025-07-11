@@ -2,10 +2,11 @@
 import React, { useState } from 'react';
 import { Container, TextField, Button, Typography, Box, Tabs, Tab } from '@mui/material';
 import { login, register } from '../services/authService';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const LoginRegisterPage = () => {
-  const [loginMode, setLoginMode] = useState(0); // 0=login, 1=register
+  const location = useLocation();
+  const [loginMode, setLoginMode] = useState(location.state?.register ? 1 : 0); // 0=login, 1=register
 
   const [formRegister, setFormRegister] = useState({
     id: '',
@@ -21,7 +22,7 @@ const LoginRegisterPage = () => {
     Email: ''
   });
 
-const navigate= useNavigate();
+  const navigate = useNavigate();
 
   const handleChangeTab = (_event: any, newValue: number) => {
     setLoginMode(newValue);
@@ -30,8 +31,6 @@ const navigate= useNavigate();
     else
       setFormLogin({ UserName: '', Password: '', Email: '' });
   };
-
-
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, files } = e.target;
@@ -47,46 +46,43 @@ const navigate= useNavigate();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (loginMode === 1) {
-    // Register
-    if (!formRegister.email || !formRegister.password || !formRegister.name) {
-      alert('Please fill all required fields');
-      return;
-    }
+    if (loginMode === 1) {
+      if (!formRegister.email || !formRegister.password || !formRegister.name) {
+        alert('Please fill all required fields');
+        return;
+      }
 
-    try {
-      await register(formRegister);
-      alert('Registration successful!');
-      navigate('/Home');  // מעבר לדף הבית אחרי רישום
-    } catch (error) {
-      alert('Registration failed.');
-      console.error(error);
-    }
-  } else {
-    // Login
-    if (!formLogin.UserName || !formLogin.Email || !formLogin.Password) {
-      alert('Please enter UserName, Email and Password');
-      return;
-    }
+      try {
+        await register(formRegister);
+        alert('Registration successful!');
+        navigate('/');
+      } catch (error) {
+        alert('Registration failed.');
+        console.error(error);
+      }
+    } else {
+      if (!formLogin.UserName || !formLogin.Email || !formLogin.Password) {
+        alert('Please enter UserName, Email and Password');
+        return;
+      }
 
-    try {
-      const result = await login({
-        UserName: formLogin.UserName,
-        Email: formLogin.Email,
-        Password: formLogin.Password
-      });
-      sessionStorage.setItem('token', typeof result === 'string' ? result : result.token);
-      alert('Login successful!');
-      navigate('/');  // מעבר לדף הבית אחרי התחברות
-    } catch (error) {
-      alert('Login failed.');
-      console.error(error);
+      try {
+        const result = await login({
+          UserName: formLogin.UserName,
+          Email: formLogin.Email,
+          Password: formLogin.Password
+        });
+        sessionStorage.setItem('token', typeof result === 'string' ? result : result.token);
+        alert('Login successful!');
+        navigate('/');
+      } catch (error) {
+        alert('Login failed.');
+        console.error(error);
+      }
     }
-  }
-};
-
+  };
 
   return (
     <Container maxWidth="sm">
@@ -101,10 +97,9 @@ const navigate= useNavigate();
         </Tabs>
 
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
-
           <TextField
             label="UserName"
-            name="UserName"
+            name={loginMode === 1 ? "name" : "UserName"}
             fullWidth
             margin="normal"
             value={loginMode === 1 ? formRegister.name : formLogin.UserName}
@@ -113,7 +108,7 @@ const navigate= useNavigate();
 
           <TextField
             label="Email"
-            name="Email"
+            name={loginMode === 1 ? "email" : "Email"}
             fullWidth
             margin="normal"
             value={loginMode === 1 ? formRegister.email : formLogin.Email}
@@ -122,7 +117,7 @@ const navigate= useNavigate();
 
           <TextField
             label="Password"
-            name="Password"
+            name={loginMode === 1 ? "password" : "Password"}
             type="password"
             fullWidth
             margin="normal"
@@ -143,7 +138,21 @@ const navigate= useNavigate();
             />
           )}
 
-          <Button type="submit" variant="contained" fullWidth sx={{ mt: 2, background: '#1976d2', color: '#fff', fontWeight: 700, '&:hover': { background: '#90caf9', color: '#1976d2' } }}>
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            sx={{
+              mt: 2,
+              background: '#1976d2',
+              color: '#fff',
+              fontWeight: 700,
+              '&:hover': {
+                background: '#90caf9',
+                color: '#1976d2'
+              }
+            }}
+          >
             {loginMode === 0 ? 'Login' : 'Register'}
           </Button>
         </Box>
@@ -153,4 +162,3 @@ const navigate= useNavigate();
 };
 
 export default LoginRegisterPage;
-

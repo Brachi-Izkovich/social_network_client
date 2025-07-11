@@ -16,9 +16,10 @@ export const addTopic = async (categoryId: number, title: string): Promise<Topic
   formData.append('Id', '0');
   formData.append('CategoryId', categoryId.toString());
   formData.append('Title', title);
-  const res = await api.post('/topic', formData, {
+  const res = await api.post('/Topic', formData, {
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {})
+      // לא להגדיר Content-Type ידנית כדי שיישאר multipart/form-data
     },
   });
   return res.data;

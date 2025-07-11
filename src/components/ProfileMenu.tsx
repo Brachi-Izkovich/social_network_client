@@ -30,6 +30,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({ userName }) => {
     sessionStorage.removeItem('token');
     navigate('/');
     handleClose();
+    window.location.reload(); // רענון הדף אחרי התנתקות
   };
 
   return (

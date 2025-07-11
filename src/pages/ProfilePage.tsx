@@ -7,26 +7,37 @@ import { parseJwt } from '../services/jwtService';
 import { UserType } from '../types/user.types';
 
 const ProfilePage: React.FC = () => {
+  const navigate = window.location ? (window.location.assign ? (url: string) => window.location.assign(url) : undefined) : undefined;
   const [user, setUser] = useState<UserType | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState<Partial<UserType>>({});
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { 
+  useEffect(() => {
     const token = sessionStorage.getItem('token');
     if (!token) {
       setLoading(false);
       return;
     }
-    getPrivateUser()
-      .then((u) => {
-        setUser(u);
-        setForm(u);
-      })
-      .catch((err) => {
-        console.error('getPrivateUser error:', err);
-      })
-      .finally(() => setLoading(false));
+    // פענוח ה־id מהטוקן
+    const payload = parseJwt(token);
+    const userId = payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+    // קריאה לשרת לפי id
+    import('../services/userService').then(({ getUserById }) => {
+      getUserById(userId)
+        .then((u) => {
+          setUser(u);
+          setForm(u);
+        })
+        .catch((err) => {
+          console.error('getUserById error:', err);
+        })
+        .finally(() => setLoading(false));
+    });
   }, []);
 
   const handleEdit = () => setEditMode(true);
@@ -40,11 +51,18 @@ const ProfilePage: React.FC = () => {
   const handleSave = async () => {
     if (!user) return;
     try {
-      // קריאה ל-API לעדכון משתמש
-      // שמות שדות ב-PascalCase
-      const updated = await updateUser(user.id, form);
+      // שליחת רק השדות המותרים לעדכון
+      const dataToSend: any = {
+        name: form.name || user.name,
+        email: form.email || user.email,
+        password: form.password || undefined,
+        imageProfileUrl: user.imageProfileUrl || ''
+      };
+      const updated = await updateUser(user.id, dataToSend);
       setUser(updated);
       setEditMode(false);
+      // ניווט אוטומטי לדף הפרופיל
+      window.location.reload();
     } catch (err) {
       // אפשר להציג הודעת שגיאה למשתמש
       console.error('עדכון משתמש נכשל:', err);
@@ -70,6 +88,10 @@ const ProfilePage: React.FC = () => {
 
   return (
     <Box maxWidth={420} mx="auto" mt={6} p={3} borderRadius={4} boxShadow={3} bgcolor="#fff" textAlign="center">
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <div></div>
+        <button style={{ padding: '8px 18px', borderRadius: 20, background: '#1976d2', color: '#fff', fontWeight: 700, border: 'none', cursor: 'pointer', fontSize: 16 }} onClick={() => navigate && navigate('/')}>חזרה לדף הבית</button>
+      </Box>
       <Box display="flex" flexDirection="column" alignItems="center" mb={2}>
         <Avatar src={user.imageProfileUrl} sx={{ width: 80, height: 80, mb: 1 }} />
         <Box display="flex" alignItems="center" gap={1}>

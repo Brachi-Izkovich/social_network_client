@@ -7,6 +7,7 @@ import NewPostPage from "../pages/NewPostPage";
 import ProfilePage from "../pages/ProfilePage";
 import TopicPage from "../pages/TopicPage";
 import CategoryPage from '../pages/CategoryPage';
+import UserListPage from '../pages/UserListPage';
 
 export default function AppRouter() {
   // לוגים מרכזיים לניווט, טוקן, והרשאות
@@ -28,20 +29,12 @@ export default function AppRouter() {
 
   return (
     <Routes>
-      {/* דף הבית – מציג רק קטגוריות */}
       <Route path="" element={<HomePage />} />
-
-      {/* דף התחברות/רישום */}
       <Route path="/Login" element={<LoginRegisterPage />} />
-
-      {/* דף פרופיל משתמש */}
       <Route path="/Profile" element={<ProfilePage />} />
-
-      {/* דף קטגוריה – מציג שם קטגוריה ורשימת נושאים בלבד */}
       <Route path="/Categories/:id" element={<CategoryPage key="category-by-id" />} />
-
-      {/* דף נושא – מציג הודעות של נושא ופידבקים לכל הודעה */}
       <Route path="/Topic/:id" element={<TopicPage key="topic-by-id" />} />
+      <Route path="/UserList" element={<UserListPage />} />
     </Routes>
   );
 }
